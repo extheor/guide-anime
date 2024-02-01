@@ -1,5 +1,5 @@
 {
-  "name": "guide",
+  "name": "guide-anime",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -7,5 +7,17 @@
   },
   "author": "maxiaoyu",
   "license": "ISC",
-  "description": "在Web端使用的引导动画"
+  "description": "在Web端使用的引导动画",
+  "keywords": [
+    "引导动画",
+    "Web端",
+    "步骤引导"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/extheor/guide-anime.git"
+  },
+  "bugs": {
+    "url": "https://github.com/extheor/guide-anime/issues"
+  }
 }
