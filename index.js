@@ -46,6 +46,7 @@ export default function guide() {
   let steps = [];
   let stepText = "下一步";
   let lastStepText = "完成";
+  let tTimeVal = 1;
 
   // 初始化mask背景
   document.documentElement.style.setProperty(
@@ -53,7 +54,7 @@ export default function guide() {
     "rgba(0, 0, 0, 0.5)"
   );
   // 初始化过渡时长
-  document.documentElement.style.setProperty(`--${tTime}`, "1s");
+  document.documentElement.style.setProperty(`--${tTime}`, `${tTimeVal}s`);
 
   return {
     setOptions: (options) => {
@@ -138,13 +139,17 @@ export default function guide() {
         "[object String]" && (lastStepText = options.lastStepText);
 
       const tTimeType = Object.prototype.toString.call(options.tTime);
-      tTimeType === "[object String]" &&
+      if (tTimeType === "[object String]") {
         document.documentElement.style.setProperty(`--${tTime}`, options.tTime);
-      tTimeType === "[object Number]" &&
+        tTimeVal = options.tTime.slice(0, -1);
+      }
+      if (tTimeType === "[object Number]") {
         document.documentElement.style.setProperty(
           `--${tTime}`,
           options.tTime + "s"
         );
+        tTimeVal = options.tTime;
+      }
       // if(Object.prototype.toString.call(options.stepText) === "[object String]") {
       //   stepText = options.stepText
       // }
@@ -183,8 +188,14 @@ export default function guide() {
         }
       }
 
+      // 节流的过期时间
+      let expireTime = 0;
       nextStepEl.addEventListener("click", nextStepClick);
       function nextStepClick() {
+        // 节流
+        if (+new Date() - expireTime < tTimeVal * 1000) return;
+        expireTime = +new Date();
+
         const lastStepIndex = steps.length - 1;
         if (stepIndex === lastStepIndex) {
           maskEl.style.opacity = 0;
