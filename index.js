@@ -47,6 +47,8 @@ export default function guide() {
   let stepText = "下一步";
   let lastStepText = "完成";
   let tTimeVal = 1;
+  let imgList = [];
+  let execList = []; // 执行器队列(先进先出)
 
   // 初始化mask背景
   document.documentElement.style.setProperty(
@@ -57,71 +59,86 @@ export default function guide() {
   document.documentElement.style.setProperty(`--${tTime}`, `${tTimeVal}s`);
 
   return {
-    setOptions: (options) => {
+    setOptions: async function (options) {
+      // 异步加载img
+      function loadImage(img) {
+        return new Promise((resolve, reject) => (img.onload = resolve));
+      }
+
+      // 设置坐标点
+      function setPoints(el, step) {
+        const x = el.offsetLeft;
+        const y = el.offsetTop;
+        const w = el.offsetWidth;
+        const h = el.offsetHeight;
+
+        if (Object.prototype.toString.call(step.point) === "[object Object]") {
+          pointKeys.some((k) => {
+            if (!step.point[k]) {
+              console.warn(`请按照规范定义point对象，正确格式：{
+                ltx: "",
+                lty: "",
+                rtx: "",
+                rty: "",
+                rbx: "",
+                rby: "",
+                lbx: "",
+                lby: ""
+              }`);
+
+              // 使用默认坐标值
+              step.point = {
+                [pointKeys[0]]: x + "px",
+                [pointKeys[1]]: y + "px",
+                [pointKeys[2]]: x + w + "px",
+                [pointKeys[3]]: y + "px",
+                [pointKeys[4]]: x + w + "px",
+                [pointKeys[5]]: y + h + "px",
+                [pointKeys[6]]: x + "px",
+                [pointKeys[7]]: y + h + "px",
+              };
+
+              return true;
+            }
+          });
+        } else {
+          // 使用默认坐标值
+          step.point = {
+            [pointKeys[0]]: x + "px",
+            [pointKeys[1]]: y + "px",
+            [pointKeys[2]]: x + w + "px",
+            [pointKeys[3]]: y + "px",
+            [pointKeys[4]]: x + w + "px",
+            [pointKeys[5]]: y + h + "px",
+            [pointKeys[6]]: x + "px",
+            [pointKeys[7]]: y + h + "px",
+          };
+        }
+      }
+
       if (Object.prototype.toString.call(options.steps) === "[object Array]") {
         let existEl = true;
-        options.steps.forEach((item, index) => {
-          if (item && item.element) {
-            const el = document.querySelector(item.element);
+        for (const index in options.steps) {
+          const step = options.steps[index];
+          if (step && step.element) {
+            const el = document.querySelector(step.element);
 
             if (!el) {
               existEl = false;
               options.steps[index] = null;
             } else {
-              const x = el.offsetLeft;
-              const y = el.offsetTop;
-              const w = el.offsetWidth;
-              const h = el.offsetHeight;
-
-              if (
-                Object.prototype.toString.call(item.point) === "[object Object]"
-              ) {
-                pointKeys.some((k) => {
-                  if (!item.point[k]) {
-                    console.warn(`请按照规范定义point对象，正确格式：{
-                      ltx: "",
-                      lty: "",
-                      rtx: "",
-                      rty: "",
-                      rbx: "",
-                      rby: "",
-                      lbx: "",
-                      lby: ""
-                    }`);
-
-                    // 使用默认坐标值
-                    item.point = {
-                      [pointKeys[0]]: x + "px",
-                      [pointKeys[1]]: y + "px",
-                      [pointKeys[2]]: x + w + "px",
-                      [pointKeys[3]]: y + "px",
-                      [pointKeys[4]]: x + w + "px",
-                      [pointKeys[5]]: y + h + "px",
-                      [pointKeys[6]]: x + "px",
-                      [pointKeys[7]]: y + h + "px",
-                    };
-
-                    return true;
-                  }
-                });
+              if (el.src) {
+                imgList.push(el);
+                await loadImage(el);
+                setPoints(el, step);
               } else {
-                // 使用默认坐标值
-                item.point = {
-                  [pointKeys[0]]: x + "px",
-                  [pointKeys[1]]: y + "px",
-                  [pointKeys[2]]: x + w + "px",
-                  [pointKeys[3]]: y + "px",
-                  [pointKeys[4]]: x + w + "px",
-                  [pointKeys[5]]: y + h + "px",
-                  [pointKeys[6]]: x + "px",
-                  [pointKeys[7]]: y + h + "px",
-                };
+                setPoints(el, step);
               }
             }
           } else {
             console.warn("请配置步骤元素");
           }
-        });
+        }
         steps = options.steps.filter(Boolean);
 
         !existEl && console.warn("请检查配置的元素是否存在");
@@ -150,14 +167,23 @@ export default function guide() {
         );
         tTimeVal = options.tTime;
       }
-      // if(Object.prototype.toString.call(options.stepText) === "[object String]") {
-      //   stepText = options.stepText
-      // }
-      // if(Object.prototype.toString.call(options.lastStepText) === "[object String]") {
-      //   lastStepText = options.lastStepText
-      // }
+
+      /******************************************************************************/
+      // 如果imgList长度大于0，说明有图片元素的异步加载，最后执行
+      if (imgList.length > 0) {
+        imgList = [];
+        for (let i = execList.reverse().length - 1; i >= 0; i--) {
+          execList.shift()();
+        }
+      }
     },
-    start: () => {
+    start: function () {
+      // 如果imgList长度大于0，说明有图片元素的异步加载，则等待加载完成后再执行
+      if (imgList.length > 0) {
+        execList.push(this.start);
+        return;
+      }
+
       // 第几步的索引值
       let stepIndex = 0;
 
@@ -191,7 +217,7 @@ export default function guide() {
       // 节流的过期时间
       let expireTime = 0;
       nextStepEl.addEventListener("click", nextStepClick);
-      function nextStepClick() {
+      function nextStepClick(e) {
         // 节流
         if (+new Date() - expireTime < tTimeVal * 1000) return;
         expireTime = +new Date();
