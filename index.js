@@ -172,7 +172,7 @@ export default function guide() {
       // 如果imgList长度大于0，说明有图片元素的异步加载，最后执行
       if (imgList.length > 0) {
         imgList = [];
-        for (let i = execList.reverse().length - 1; i >= 0; i--) {
+        for (let i = execList.length - 1; i >= 0; i--) {
           execList.shift()();
         }
       }
