@@ -1,8 +1,11 @@
 {
   "name": "guide-anime",
-  "version": "1.0.1",
-  "main": "index.js",
+  "version": "1.0.2",
+  "main": "./dist/guide-anime.cjs.js",
+  "module": "./dist/guide-anime.es.mjs",
+  "jsnext:main": "./dist/guide-anime.es.mjs",
   "scripts": {
+    "build": "rollup -c",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "maxiaoyu",
@@ -19,5 +22,27 @@
   },
   "bugs": {
     "url": "https://github.com/extheor/guide-anime/issues"
+  },
+  "files": [
+    "dist/*",
+    "index.d.ts",
+    "README.md"
+  ],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "import": "./dist/guide-anime.es.mjs",
+      "require": "./dist/guide-anime.cjs.js"
+    }
+  },
+  "browser": "./dist/guide-anime.umd.js",
+  "devDependencies": {
+    "rollup-plugin-babel": "^4.4.0",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-terser": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=12"
   }
 }

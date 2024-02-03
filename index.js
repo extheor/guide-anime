@@ -1,4 +1,4 @@
-export default function guide() {
+function guide() {
   const maskEl = document.createElement("div");
   const nextStepEl = document.createElement("div");
   const minx = "minx";
@@ -249,3 +249,5 @@ export default function guide() {
     },
   };
 }
+
+module.exports = guide;
